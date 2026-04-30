@@ -46,12 +46,8 @@
   @apply rounded-none border-4 border-accent-pink bg-white text-ink font-bold;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,0.2);

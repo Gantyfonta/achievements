@@ -1,37 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Achieve-IT PRO</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style type="text/tailwindcss">
-      @theme {
-        --font-sans: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-        --color-bg: #581C87;
-        --color-card: #FFFFFF;
-        --color-accent-yellow: #FACC15;
-        --color-accent-pink: #EC4899;
-        --color-accent-teal: #14B8A6;
-        --color-ink: #1E293B;
-        --color-ink-light: #F8FAFC;
-        --radius-lg: 32px;
-        --radius-md: 24px;
-        --radius-sm: 12px;
-      }
-      @layer base { body { @apply bg-bg text-ink-light font-sans transition-colors duration-300; } }
-      .vibrant-card-shadow { box-shadow: 0 8px 0px rgba(0,0,0,0.2); }
-      .vibrant-featured-shadow { box-shadow: 8px 8px 0px #1E293B; }
-      .achievement-unlocked { animation: unlock-shine 2s ease-in-out infinite; @apply border-accent-pink border-4; }
-      @keyframes unlock-shine { 0%, 100% { box-shadow: 0 0 0px var(--color-accent-pink); } 50% { box-shadow: 0 0 20px var(--color-accent-pink); } }
-      ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-    </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

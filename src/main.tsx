@@ -1,46 +1,25 @@
-import { StrictMode, useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { StrictMode, useEffect, useState, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Target, Timer, Moon, Sun, Trophy, History, TrendingUp, 
-  Settings, ChevronRight, Sparkles, Zap, MousePointer2, 
-  Search, Hourglass, Lock, ExternalLink 
+  Trophy, 
+  Moon, 
+  Sun, 
+  Lock,
+  Zap,
+  Target,
+  Timer,
+  Hourglass,
+  Settings,
+  Search,
+  ExternalLink
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Toaster, toast } from 'sonner';
 import './index.css';
 
 // --- TYPES & CONSTANTS ---
-enum AchievementCategory {
-  GENERAL = "General",
-  CLICKING = "Clicking",
-  TIME = "Time",
-  SECRETS = "Secrets",
-}
-
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  category: AchievementCategory;
-  isUnlocked: boolean;
-  condition: (state: GameState) => boolean;
-  icon: React.ReactNode;
-  rarity: "Common" | "Rare" | "Epic" | "Legendary";
-}
-
-interface GameState {
-  clicks: number;
-  totalPoints: number;
-  timePlayed: number;
-  lastClickTime: number;
-  viewedLog: number;
-  isDark: boolean;
-  unlockedIds: string[];
-  lastUpdate: number;
-}
-
-const INITIAL_STATE: GameState = {
+const INITIAL_STATE = {
   clicks: 0,
   totalPoints: 0,
   timePlayed: 0,
@@ -51,8 +30,18 @@ const INITIAL_STATE: GameState = {
   lastUpdate: Date.now(),
 };
 
-// --- HELPER COMPONENTS ---
-const ProgressBar = ({ value }: { value: number }) => (
+const ACHIEVEMENTS = [
+  { id: "first_tap", title: "The Awakening", description: "Initialize the system with your first tap.", rarity: "Common", icon: "👑", condition: (s) => s.clicks >= 1 },
+  { id: "click_50", title: "Energy Pulse", description: "Reach 50 generation pulses.", rarity: "Common", icon: "⚡", condition: (s) => s.clicks >= 50 },
+  { id: "click_500", title: "Overload", description: "Push the system to 500 generation strikes.", rarity: "Rare", icon: "🚀", condition: (s) => s.clicks >= 500 },
+  { id: "zen", title: "System Rest", description: "Wait 60 seconds between clicks.", rarity: "Rare", icon: "🧘", condition: (s) => Date.now() - s.lastClickTime > 60000 && s.clicks > 0 },
+  { id: "time_10m", title: "Server Veteran", description: "Total uptime of 10 minutes.", rarity: "Legendary", icon: "💎", condition: (s) => s.timePlayed >= 600 },
+  { id: "view_log", title: "Auditor", description: "Check the system logs 5 times.", rarity: "Common", icon: "📜", condition: (s) => s.viewedLog >= 5 },
+  { id: "secret", title: "Glitch Finder", description: "Found the hidden system anchor.", rarity: "Epic", icon: "🔮", condition: () => false }
+];
+
+// --- COMPONENTS ---
+const ProgressBar = ({ value }) => (
   <div className="h-3 bg-black/10 rounded-full overflow-hidden">
     <motion.div 
       initial={{ width: 0 }}
@@ -62,91 +51,16 @@ const ProgressBar = ({ value }: { value: number }) => (
   </div>
 );
 
-// --- MAIN APP ---
 function App() {
-  const [state, setState] = useState<GameState>(() => {
-    const saved = localStorage.getItem('achieve_it_v5');
-    if (saved) return { ...INITIAL_STATE, ...JSON.parse(saved) };
-    return INITIAL_STATE;
+  const [state, setState] = useState(() => {
+    const saved = localStorage.getItem('achieve_it_v6');
+    return saved ? { ...INITIAL_STATE, ...JSON.parse(saved) } : INITIAL_STATE;
   });
 
   const [showLog, setShowLog] = useState(false);
 
-  const achievements: Achievement[] = useMemo(() => [
-    {
-      id: "first_tap",
-      title: "The Awakening",
-      description: "Initialize the system with your first tap.",
-      category: AchievementCategory.GENERAL,
-      isUnlocked: false,
-      icon: <MousePointer2 size={24} />,
-      rarity: "Common",
-      condition: (s) => s.clicks >= 1,
-    },
-    {
-      id: "click_50",
-      title: "Energy Pulse",
-      description: "Reach 50 generation pulses.",
-      category: AchievementCategory.CLICKING,
-      isUnlocked: false,
-      icon: <Zap size={24} />,
-      rarity: "Common",
-      condition: (s) => s.clicks >= 50,
-    },
-    {
-      id: "click_500",
-      title: "Overload",
-      description: "Push the system to 500 generation strikes.",
-      category: AchievementCategory.CLICKING,
-      isUnlocked: false,
-      icon: <Target size={24} />,
-      rarity: "Rare",
-      condition: (s) => s.clicks >= 500,
-    },
-    {
-      id: "zen",
-      title: "System Rest",
-      description: "Wait 60 seconds between clicks.",
-      category: AchievementCategory.TIME,
-      isUnlocked: false,
-      icon: <Timer size={24} />,
-      rarity: "Rare",
-      condition: (s) => Date.now() - s.lastClickTime > 60000 && s.clicks > 0,
-    },
-    {
-      id: "time_10m",
-      title: "Server Veteran",
-      description: "Total uptime of 10 minutes.",
-      category: AchievementCategory.TIME,
-      isUnlocked: false,
-      icon: <Hourglass size={24} />,
-      rarity: "Legendary",
-      condition: (s) => s.timePlayed >= 600,
-    },
-    {
-      id: "view_log",
-      title: "Auditor",
-      description: "Check the system logs 5 times.",
-      category: AchievementCategory.GENERAL,
-      isUnlocked: false,
-      icon: <Settings size={24} />,
-      rarity: "Common",
-      condition: (s) => s.viewedLog >= 5,
-    },
-    {
-      id: "secret",
-      title: "Glitch Finder",
-      description: "Found the hidden system anchor.",
-      category: AchievementCategory.SECRETS,
-      isUnlocked: false,
-      icon: <Search size={24} />,
-      rarity: "Epic",
-      condition: () => false,
-    }
-  ], []);
-
   useEffect(() => {
-    localStorage.setItem('achieve_it_v5', JSON.stringify(state));
+    localStorage.setItem('achieve_it_v6', JSON.stringify(state));
   }, [state]);
 
   useEffect(() => {
@@ -157,14 +71,14 @@ function App() {
   }, []);
 
   useEffect(() => {
-    achievements.forEach(ach => {
+    ACHIEVEMENTS.forEach(ach => {
       if (!state.unlockedIds.includes(ach.id) && ach.condition(state)) {
         unlock(ach);
       }
     });
   }, [state.clicks, state.timePlayed, state.viewedLog]);
 
-  const unlock = (ach: Achievement) => {
+  const unlock = (ach) => {
     setState(prev => {
       if (prev.unlockedIds.includes(ach.id)) return prev;
       
@@ -193,7 +107,7 @@ function App() {
   };
 
   const handleSecret = () => {
-    const s = achievements.find(a => a.id === 'secret');
+    const s = ACHIEVEMENTS.find(a => a.id === 'secret');
     if (s && !state.unlockedIds.includes(s.id)) unlock(s);
   };
 
@@ -213,7 +127,7 @@ function App() {
         
         <div className="flex items-center gap-4">
           <div className="bg-white/10 px-4 py-2 rounded-full border-2 border-white/20 font-black text-xs hidden sm:block">
-            🏆 {state.unlockedIds.length}/{achievements.length} UNLOCKED
+            🏆 {state.unlockedIds.length}/{ACHIEVEMENTS.length} UNLOCKED
           </div>
           <button 
             onClick={toggleTheme}
@@ -253,32 +167,32 @@ function App() {
         </aside>
 
         <div className="p-8 overflow-y-auto space-y-8 bg-black/5 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-sans">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <button 
               onClick={handleGenerate}
               className="bg-card text-ink p-8 rounded-[32px] vibrant-card-shadow flex flex-col items-center gap-3 active:translate-y-1 transition-all group overflow-hidden relative"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-accent-yellow" />
               <div className="text-3xl font-black italic tracking-tighter uppercase">Generate</div>
-              <div className="text-[10px] uppercase font-bold opacity-40">Frequency: {((state.clicks / (state.timePlayed || 1)) * 60).toFixed(1)} / min</div>
+              <div className="text-[10px] uppercase font-bold opacity-40">Command Input Ready</div>
             </button>
             <div className="bg-card text-ink p-8 rounded-[32px] vibrant-card-shadow flex flex-col justify-center relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-accent-pink" />
               <div className="text-5xl font-black italic tracking-tighter text-accent-pink leading-none">{state.clicks.toLocaleString()}</div>
-              <div className="text-[10px] font-mono opacity-50 uppercase mt-1">Total Hits Confirmed</div>
+              <div className="text-[10px] font-mono opacity-50 uppercase mt-1">Total Hits Detected</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pb-12">
-            {achievements.map((ach) => {
+            {ACHIEVEMENTS.map((ach) => {
               const unlocked = state.unlockedIds.includes(ach.id);
               return (
                 <motion.div 
                   key={ach.id} 
                   layout
-                  className={`bg-card p-6 rounded-[28px] flex flex-col items-center text-center gap-2 transition-all vibrant-card-shadow relative ${!unlocked ? 'opacity-40 grayscale scale-95' : 'border-4 border-accent-pink achievement-unlocked'}`}
+                  className={`bg-card p-6 rounded-[28px] flex flex-col items-center text-center gap-2 transition-all vibrant-card-shadow relative ${!unlocked ? 'opacity-30 grayscale scale-95' : 'border-4 border-accent-pink achievement-unlocked'}`}
                 >
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white border-2 border-bg shadow-lg ${unlocked ? 'bg-accent-teal' : 'bg-slate-400'}`}>
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl border-2 border-bg shadow-lg ${unlocked ? 'bg-accent-teal' : 'bg-slate-400'}`}>
                     {unlocked ? ach.icon : <Lock size={24} />}
                   </div>
                   <h3 className="font-black text-sm uppercase italic tracking-tight text-ink mt-2">
@@ -308,11 +222,10 @@ function App() {
                       <div className="text-accent-teal font-black mb-2">DIAGNOSTICS</div>
                       <p>UPTIME: {state.timePlayed}s</p>
                       <p>CLICKS: {state.clicks}</p>
-                      <p>BADGES: {state.unlockedIds.length} / {achievements.length}</p>
+                      <p>BADGES: {state.unlockedIds.length} / {ACHIEVEMENTS.length}</p>
                    </div>
                    <div className="p-4 bg-black/20 border-l-4 border-accent-pink rounded">
                       <div className="text-accent-pink font-black mb-2">STORAGE</div>
-                      <p className="mb-4">Internal buffer is {Math.round(JSON.stringify(state).length / 10.24) / 100} KB.</p>
                       <button 
                         onClick={() => { if(confirm('Purge all data?')) { localStorage.clear(); window.location.reload(); } }} 
                         className="px-4 py-2 bg-red-600 text-white font-black rounded hover:bg-black transition-colors"
@@ -328,17 +241,16 @@ function App() {
         </div>
       </main>
 
-      <footer className="h-10 shrink-0 bg-black/20 border-t border-white/10 flex items-center justify-between px-8 text-[9px] font-mono opacity-40 uppercase tracking-widest">
+      <footer className="h-10 shrink-0 bg-black/20 border-t border-white/10 flex items-center justify-between px-8 text-[9px] font-mono opacity-40 uppercase tracking-widest text-white">
         <span>Hyper-Industrial Systems © 2026</span>
         <span className="flex items-center gap-2">
-           Stable Build v5.0.2 <ExternalLink size={10} />
+           Stable Build v5.1.0 <ExternalLink size={10} />
         </span>
       </footer>
     </div>
   );
 }
 
-// --- RENDER ---
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
