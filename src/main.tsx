@@ -2,22 +2,9 @@ import { StrictMode, useEffect, useState, useRef, useCallback, useMemo } from 'r
 import { createRoot } from 'react-dom/client';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Target, 
-  Timer, 
-  Moon, 
-  Sun, 
-  Trophy,
-  History,
-  TrendingUp,
-  Settings,
-  ChevronRight,
-  Sparkles,
-  Zap,
-  MousePointer2,
-  Search,
-  Hourglass,
-  Lock,
-  ExternalLink
+  Target, Timer, Moon, Sun, Trophy, History, TrendingUp, 
+  Settings, ChevronRight, Sparkles, Zap, MousePointer2, 
+  Search, Hourglass, Lock, ExternalLink 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Toaster, toast } from 'sonner';
@@ -65,12 +52,6 @@ const INITIAL_STATE: GameState = {
 };
 
 // --- HELPER COMPONENTS ---
-const Card = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-card text-ink rounded-[24px] overflow-hidden vibrant-card-shadow ${className}`}>
-    {children}
-  </div>
-);
-
 const ProgressBar = ({ value }: { value: number }) => (
   <div className="h-3 bg-black/10 rounded-full overflow-hidden">
     <motion.div 
@@ -81,17 +62,16 @@ const ProgressBar = ({ value }: { value: number }) => (
   </div>
 );
 
-// --- MAIN APP COMPONENT ---
+// --- MAIN APP ---
 function App() {
   const [state, setState] = useState<GameState>(() => {
-    const saved = localStorage.getItem('achieve_it_v2');
-    return saved ? { ...INITIAL_STATE, ...JSON.parse(saved) } : INITIAL_STATE;
+    const saved = localStorage.getItem('achieve_it_v5');
+    if (saved) return { ...INITIAL_STATE, ...JSON.parse(saved) };
+    return INITIAL_STATE;
   });
 
   const [showLog, setShowLog] = useState(false);
-  const clickCountRef = useRef(0);
 
-  // Achievement Definitions
   const achievements: Achievement[] = useMemo(() => [
     {
       id: "first_tap",
@@ -165,10 +145,10 @@ function App() {
     }
   ], []);
 
-  // Persistence
-  useEffect(() => localStorage.setItem('achieve_it_v2', JSON.stringify(state)), [state]);
+  useEffect(() => {
+    localStorage.setItem('achieve_it_v5', JSON.stringify(state));
+  }, [state]);
 
-  // Tick loop
   useEffect(() => {
     const timer = setInterval(() => {
       setState(prev => ({ ...prev, timePlayed: prev.timePlayed + 1 }));
@@ -176,35 +156,40 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Check achievements on state change
   useEffect(() => {
     achievements.forEach(ach => {
       if (!state.unlockedIds.includes(ach.id) && ach.condition(state)) {
         unlock(ach);
       }
     });
-  }, [state, achievements]);
+  }, [state.clicks, state.timePlayed, state.viewedLog]);
 
   const unlock = (ach: Achievement) => {
     setState(prev => {
       if (prev.unlockedIds.includes(ach.id)) return prev;
       
-      confetti({ particleCount: 150, spread: 80, origin: { y: 0.8 }, colors: ['#EC4899', '#FACC15', '#14B8A6'] });
-      
-      toast.success(
-        <div className="flex flex-col">
-          <span className="font-black text-accent-pink uppercase text-[10px]">Badge Earned!</span>
-          <span className="text-sm font-bold text-ink italic">{ach.title}</span>
-        </div>,
-        { className: "rounded-none border-4 border-accent-pink bg-white shadow-xl" }
-      );
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.8 },
+        colors: ['#EC4899', '#FACC15', '#14B8A6']
+      });
+
+      toast.success(`${ach.title} Unlocked!`, {
+        className: "vibrant-toast",
+      });
 
       return { ...prev, unlockedIds: [...prev.unlockedIds, ach.id] };
     });
   };
 
   const handleGenerate = () => {
-    setState(prev => ({ ...prev, clicks: prev.clicks + 1, totalPoints: prev.totalPoints + 5, lastClickTime: Date.now() }));
+    setState(prev => ({
+      ...prev,
+      clicks: prev.clicks + 1,
+      totalPoints: prev.totalPoints + 5,
+      lastClickTime: Date.now()
+    }));
   };
 
   const handleSecret = () => {
@@ -212,9 +197,11 @@ function App() {
     if (s && !state.unlockedIds.includes(s.id)) unlock(s);
   };
 
+  const toggleTheme = () => setState(p => ({ ...p, isDark: !p.isDark }));
+
   return (
-    <div className={`min-h-screen max-w-[1024px] mx-auto bg-bg flex flex-col font-sans transition-all selection:bg-accent-yellow selection:text-bg ${state.isDark ? 'dark' : ''}`}>
-      <Toaster position="top-center" />
+    <div className={`min-h-screen max-w-[1024px] mx-auto bg-bg flex flex-col font-sans selection:bg-accent-yellow ${state.isDark ? 'brightness-90' : ''}`}>
+      <Toaster position="top-center" theme={state.isDark ? 'dark' : 'light'} />
       
       <header className="h-20 shrink-0 flex items-center justify-between px-8 bg-black/20 border-b-4 border-accent-pink">
         <div className="flex items-center gap-4">
@@ -229,8 +216,8 @@ function App() {
             🏆 {state.unlockedIds.length}/{achievements.length} UNLOCKED
           </div>
           <button 
-            onClick={() => setState(p => ({ ...p, isDark: !p.isDark }))}
-            className="w-10 h-10 rounded-full bg-accent-pink text-white flex items-center justify-center hover:rotate-12 transition-transform shadow-lg"
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-full bg-accent-pink text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg"
           >
             {state.isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
@@ -238,65 +225,47 @@ function App() {
       </header>
 
       <main className="flex-1 grid grid-cols-1 md:grid-cols-[300px_1fr] relative overflow-hidden">
-        
         <aside className="bg-black/10 border-r-2 border-white/10 border-dashed p-6 flex flex-col gap-6">
-          <div className="bg-accent-teal p-6 rounded-[24px] text-white vibrant-featured-shadow flex flex-col gap-3">
-             <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Goal Tracker</div>
-             <div className="font-black text-xl italic">Pulse Master</div>
+          <div className="bg-accent-teal p-6 rounded-[24px] text-white vibrant-featured-shadow">
+             <div className="text-[10px] font-black uppercase opacity-80 mb-2">Pulse Goal</div>
              <ProgressBar value={(state.clicks / 500) * 100} />
-             <div className="text-[9px] font-bold opacity-60">Reach 500 pulses to peak.</div>
+             <div className="text-[9px] font-bold opacity-60 mt-2 italic">Goal: 500 Hits</div>
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-             <div className="text-[10px] font-black uppercase opacity-40 tracking-bold">Session Metrics</div>
-             <div className="grid gap-2 font-mono text-xs">
-                <div className="flex justify-between p-2 bg-black/20"><span>UPTIME</span><span>{state.timePlayed}s</span></div>
-                <div className="flex justify-between p-2 bg-black/20"><span>ENERGY</span><span>{state.totalPoints}</span></div>
-                <div className="flex justify-between p-2 bg-black/20"><span>SYNC</span><span className="text-green-400">READY</span></div>
+          <div className="flex-1 space-y-4 font-mono text-xs overflow-y-auto pr-2">
+             <div className="text-[10px] font-black opacity-30 mt-4">CORE_TELEMETRY</div>
+             <div className="flex justify-between p-2 bg-black/20 rounded">
+                <span>UPTIME</span>
+                <span>{state.timePlayed}s</span>
              </div>
-
-             <div className="mt-8">
-               <div className="text-[10px] font-black uppercase opacity-40 mb-3">Trophy History</div>
-               <div className="flex flex-wrap gap-2">
-                 {state.unlockedIds.slice(-6).reverse().map(id => (
-                   <div key={id} className="w-10 h-10 bg-accent-pink rounded-lg flex items-center justify-center text-white shadow-md border border-white/20">
-                      <Sparkles size={16} />
-                   </div>
-                 ))}
-               </div>
+             <div className="flex justify-between p-2 bg-black/20 rounded">
+                <span>RESONANCE</span>
+                <span>{state.totalPoints}</span>
              </div>
           </div>
 
           <button 
             onClick={() => { setShowLog(true); setState(p => ({ ...p, viewedLog: p.viewedLog + 1 })) }}
-            className="w-full py-3 bg-accent-yellow text-bg font-black rounded-xl hover:bg-white transition-all active:scale-95 shadow-lg"
+            className="w-full py-3 bg-accent-yellow text-bg font-black rounded-xl hover:bg-white transition-all shadow-lg active:scale-95 uppercase tracking-widest"
           >
-            OPEN SYSTEM LOG
+            System_Log
           </button>
         </aside>
 
         <div className="p-8 overflow-y-auto space-y-8 bg-black/5 relative">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-sans">
             <button 
               onClick={handleGenerate}
-              className="bg-card text-ink p-8 rounded-[32px] vibrant-card-shadow flex flex-col items-center gap-3 active:translate-y-1 transition-all group relative overflow-hidden"
+              className="bg-card text-ink p-8 rounded-[32px] vibrant-card-shadow flex flex-col items-center gap-3 active:translate-y-1 transition-all group overflow-hidden relative"
             >
-              <div className="absolute top-0 left-0 w-full h-2 bg-accent-yellow" />
-              <div className="w-20 h-20 bg-accent-yellow rounded-full flex items-center justify-center text-bg shadow-inner group-hover:scale-110 transition-transform">
-                <Target size={40} />
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] font-black uppercase opacity-40">Command Input</div>
-                <div className="text-3xl font-black italic tracking-tighter">EXECUTE_PULSE</div>
-              </div>
+              <div className="absolute top-0 left-0 w-full h-1 bg-accent-yellow" />
+              <div className="text-3xl font-black italic tracking-tighter uppercase">Generate</div>
+              <div className="text-[10px] uppercase font-bold opacity-40">Frequency: {((state.clicks / (state.timePlayed || 1)) * 60).toFixed(1)} / min</div>
             </button>
-
             <div className="bg-card text-ink p-8 rounded-[32px] vibrant-card-shadow flex flex-col justify-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-2 bg-accent-pink" />
-              <div className="text-[10px] font-black uppercase opacity-40 mb-1">Pulse Resonance</div>
-              <div className="text-5xl font-black italic tracking-tighter text-accent-pink">{state.clicks.toLocaleString()}</div>
-              <p className="text-xs font-mono opacity-50 mt-2 uppercase">Core status: Optimal</p>
+              <div className="absolute top-0 left-0 w-full h-1 bg-accent-pink" />
+              <div className="text-5xl font-black italic tracking-tighter text-accent-pink leading-none">{state.clicks.toLocaleString()}</div>
+              <div className="text-[10px] font-mono opacity-50 uppercase mt-1">Total Hits Confirmed</div>
             </div>
           </div>
 
@@ -304,21 +273,19 @@ function App() {
             {achievements.map((ach) => {
               const unlocked = state.unlockedIds.includes(ach.id);
               return (
-                <motion.div
-                  key={ach.id}
+                <motion.div 
+                  key={ach.id} 
                   layout
-                  className={`bg-card p-6 rounded-[28px] flex flex-col items-center text-center gap-3 transition-all vibrant-card-shadow relative ${!unlocked ? 'opacity-40 grayscale scale-95' : 'border-4 border-accent-pink'}`}
+                  className={`bg-card p-6 rounded-[28px] flex flex-col items-center text-center gap-2 transition-all vibrant-card-shadow relative ${!unlocked ? 'opacity-40 grayscale scale-95' : 'border-4 border-accent-pink achievement-unlocked'}`}
                 >
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-bg ${unlocked ? 'bg-accent-teal' : 'bg-slate-400'}`}>
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white border-2 border-bg shadow-lg ${unlocked ? 'bg-accent-teal' : 'bg-slate-400'}`}>
                     {unlocked ? ach.icon : <Lock size={24} />}
                   </div>
-                  <div className="flex flex-col">
-                    <h3 className="font-black text-sm uppercase tracking-tight text-ink italic leading-tight">
-                      {unlocked ? ach.title : "Classified"}
-                    </h3>
-                    <div className="text-[9px] font-black text-accent-pink mt-1 mb-2 tracking-widest">{ach.rarity.toUpperCase()}</div>
-                    {unlocked && <p className="text-[10px] font-medium opacity-70 italic leading-relaxed">{ach.description}</p>}
-                  </div>
+                  <h3 className="font-black text-sm uppercase italic tracking-tight text-ink mt-2">
+                    {unlocked ? ach.title : "Classified"}
+                  </h3>
+                  <div className="text-[9px] font-black text-accent-pink tracking-widest">{ach.rarity.toUpperCase()}</div>
+                  {unlocked && <p className="text-[10px] font-medium opacity-60 italic leading-tight">{ach.description}</p>}
                 </motion.div>
               );
             })}
@@ -327,55 +294,45 @@ function App() {
           <AnimatePresence>
             {showLog && (
               <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="absolute inset-4 z-50 bg-bg/95 border-b-8 border-accent-pink p-8 rounded-[32px] flex flex-col gap-6 shadow-2xl"
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: 20 }} 
+                className="absolute inset-4 z-50 bg-bg p-8 rounded-[32px] flex flex-col gap-6 shadow-2xl border-b-8 border-accent-pink"
               >
-                <div className="flex justify-between items-center border-b-4 border-white/20 pb-4">
-                  <h2 className="text-4xl font-black italic text-accent-yellow leading-none">SYSTEM_LOG.DAT</h2>
-                  <button onClick={() => setShowLog(false)} className="bg-white text-bg px-4 py-2 font-black text-xs uppercase rounded-lg">CLOSE</button>
+                <div className="flex justify-between items-center border-b-2 border-white/10 pb-4">
+                  <h2 className="text-4xl font-black italic text-accent-yellow uppercase">Metrics</h2>
+                  <button onClick={() => setShowLog(false)} className="bg-white text-bg px-4 py-2 font-black text-xs rounded-lg italic">CLOSE</button>
                 </div>
-                
-                <div className="flex-1 font-mono text-xs overflow-y-auto space-y-4">
-                  <div className="p-4 bg-black/20 border-l-4 border-accent-teal">
-                    <div className="text-accent-teal font-black">Runtime Diagnostics</div>
-                    <div className="mt-2 space-y-1 opacity-80">
-                      <p>START_TIME: {new Date(state.lastUpdate).toLocaleTimeString()}</p>
-                      <p>CORE_TEMPERATURE: STABLE</p>
-                      <p>BADGE_COUNT: {state.unlockedIds.length}</p>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-black/20 border-l-4 border-accent-pink">
-                    <div className="text-accent-pink font-black">Memory Allocation</div>
-                    <p className="mt-2 opacity-70 italic">Warning: Manual memory wipe is irreversible.</p>
-                    <button 
-                      onClick={() => { if(confirm('Purge all memory clusters?')) { localStorage.clear(); window.location.reload(); } }}
-                      className="mt-4 px-4 py-2 bg-red-600 text-white font-black hover:bg-black transition-all"
-                    >
-                      FORMAT_DRIVE.EXE
-                    </button>
-                  </div>
+                <div className="flex-1 font-mono text-xs space-y-4 opacity-80 overflow-y-auto">
+                   <div className="p-4 bg-black/20 border-l-4 border-accent-teal rounded">
+                      <div className="text-accent-teal font-black mb-2">DIAGNOSTICS</div>
+                      <p>UPTIME: {state.timePlayed}s</p>
+                      <p>CLICKS: {state.clicks}</p>
+                      <p>BADGES: {state.unlockedIds.length} / {achievements.length}</p>
+                   </div>
+                   <div className="p-4 bg-black/20 border-l-4 border-accent-pink rounded">
+                      <div className="text-accent-pink font-black mb-2">STORAGE</div>
+                      <p className="mb-4">Internal buffer is {Math.round(JSON.stringify(state).length / 10.24) / 100} KB.</p>
+                      <button 
+                        onClick={() => { if(confirm('Purge all data?')) { localStorage.clear(); window.location.reload(); } }} 
+                        className="px-4 py-2 bg-red-600 text-white font-black rounded hover:bg-black transition-colors"
+                      >
+                        PURGE_MEMORY.EXE
+                      </button>
+                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-
-          <div 
-            onClick={handleSecret}
-            className="fixed bottom-4 left-4 w-4 h-4 rounded-full bg-accent-yellow/5 hover:bg-accent-yellow/20 cursor-crosshair transition-all"
-            title="S_0x04"
-          />
+          <div onClick={handleSecret} className="fixed bottom-4 left-4 w-4 h-4 rounded-full bg-accent-yellow/5 hover:bg-accent-yellow/50 cursor-crosshair transition-all" />
         </div>
       </main>
 
-      <footer className="h-10 bg-black/30 border-t-2 border-white/10 flex items-center px-8 justify-between text-[10px] font-mono opacity-40 uppercase tracking-widest text-white">
-        <div>Hyper-Industrial Games &copy; 2026</div>
-        <div className="flex gap-4">
-          <span>{new Date().toISOString()}</span>
-          <span className="flex items-center gap-1"><ExternalLink size={10} /> v2.1-LEAN</span>
-        </div>
+      <footer className="h-10 shrink-0 bg-black/20 border-t border-white/10 flex items-center justify-between px-8 text-[9px] font-mono opacity-40 uppercase tracking-widest">
+        <span>Hyper-Industrial Systems © 2026</span>
+        <span className="flex items-center gap-2">
+           Stable Build v5.0.2 <ExternalLink size={10} />
+        </span>
       </footer>
     </div>
   );

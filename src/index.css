@@ -15,14 +15,12 @@
   --radius-lg: 32px;
   --radius-md: 24px;
   --radius-sm: 12px;
-
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
 }
 
 @layer base {
   body {
     @apply bg-bg text-ink-light font-sans transition-colors duration-300;
+    margin: 0;
   }
 }
 
@@ -40,9 +38,12 @@
 }
 
 @keyframes unlock-shine {
-  0% { box-shadow: 0 0 0px var(--color-accent-pink); }
+  0%, 100% { box-shadow: 0 0 0px var(--color-accent-pink); }
   50% { box-shadow: 0 0 20px var(--color-accent-pink); }
-  100% { box-shadow: 0 0 0px var(--color-accent-pink); }
+}
+
+.vibrant-toast {
+  @apply rounded-none border-4 border-accent-pink bg-white text-ink font-bold;
 }
 
 /* Custom Scrollbar */
@@ -53,8 +54,6 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-ink);
-  opacity: 0.2;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
 }
-
-@custom-variant dark (&:is(.dark *));
