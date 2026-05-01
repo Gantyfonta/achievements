@@ -4,52 +4,69 @@
   --font-sans: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-bg: #581C87;
+  --color-bg: #5a189a;
   --color-card: #FFFFFF;
-  --color-accent-yellow: #FACC15;
-  --color-accent-pink: #EC4899;
-  --color-accent-teal: #14B8A6;
-  --color-ink: #1E293B;
-  --color-ink-light: #F8FAFC;
+  --color-accent-yellow: #ff9e00;
+  --color-accent-pink: #ff0054;
+  --color-accent-teal: #00f5d4;
+  --color-ink: #1e1e1e;
+  --color-ink-light: #f8f9fa;
 
-  --radius-lg: 32px;
+  --radius-lg: 40px;
   --radius-md: 24px;
   --radius-sm: 12px;
 }
 
 @layer base {
   body {
-    @apply bg-bg text-ink-light font-sans transition-colors duration-300;
+    @apply bg-bg text-ink-light font-sans transition-colors duration-500;
     margin: 0;
+    overflow: hidden;
   }
 }
 
 .vibrant-card-shadow {
-  box-shadow: 0 8px 0px rgba(0,0,0,0.2);
+  box-shadow: 0 12px 0px rgba(0,0,0,0.3);
 }
 
 .vibrant-featured-shadow {
-  box-shadow: 8px 8px 0px #1E293B;
+  box-shadow: 10px 10px 0px #10002b;
 }
 
 .achievement-unlocked {
-  animation: unlock-shine 2s ease-in-out infinite;
-  @apply border-accent-pink border-4;
+  animation: unlock-shine 3s ease-in-out infinite;
 }
 
 @keyframes unlock-shine {
   0%, 100% { box-shadow: 0 0 0px var(--color-accent-pink); }
-  50% { box-shadow: 0 0 20px var(--color-accent-pink); }
+  50% { box-shadow: 0 0 30px var(--color-accent-pink); }
 }
 
 .vibrant-toast {
-  @apply rounded-none border-4 border-accent-pink bg-white text-ink font-bold;
+  @apply rounded-none border-t-4 border-l-4 border-accent-pink bg-bg text-white font-black uppercase text-[10px] tracking-widest shadow-2xl;
 }
 
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 2px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+}
+::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.2);
-  border-radius: 10px;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
